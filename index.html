@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Loan EMI Calculator</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#14213D">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="EMI Calc">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    --paper: #EEF1F5;
+    --card: #FFFFFF;
+    --ink: #14213D;
+    --muted: #5B6578;
+    --line: #D9DFE8;
+    --accent: #0E7C66;
+    --accent-ink: #FFFFFF;
+    --principal: #14213D;
+    --interest: #F2A33A;
+    --soft: #E4EAF2;
+    --danger: #B3261E;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0D1424;
+      --card: #172036;
+      --ink: #EDF1F8;
+      --muted: #A3AEC2;
+      --line: #2A3652;
+      --accent: #3CC9A8;
+      --accent-ink: #072A22;
+      --principal: #8FA5D6;
+      --interest: #F2A33A;
+      --soft: #1F2A45;
+      --danger: #FF8A80;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0D1424;
+    --card: #172036;
+    --ink: #EDF1F8;
+    --muted: #A3AEC2;
+    --line: #2A3652;
+    --accent: #3CC9A8;
+    --accent-ink: #072A22;
+    --principal: #8FA5D6;
+    --interest: #F2A33A;
+    --soft: #1F2A45;
+    --danger: #FF8A80;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+  .app { max-width: 520px; margin: 0 auto; padding: 18px 16px 40px; }
+  h1, h2, .num { font-family: "Sora", system-ui, sans-serif; }
+  h1 { font-size: 22px; margin: 4px 0 2px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); margin: 0 0 18px; font-size: 14px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  label, .lbl { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .input-wrap { display: flex; align-items: center; background: var(--paper); border: 1.5px solid var(--line); border-radius: 12px; padding: 0 12px; transition: border-color .15s; }
+  .input-wrap:focus-within { border-color: var(--accent); }
+  .input-wrap .affix { color: var(--muted); font-weight: 600; font-size: 15px; }
+  input[type=number], input[type=month], select {
+    width: 100%; border: 0; background: transparent; color: var(--ink);
+    font: 600 17px "Sora", system-ui, sans-serif;
+    padding: 13px 8px; outline: none; min-width: 0; -moz-appearance: textfield;
+  }
+  input[type=month] { font-size: 15px; }
+  select { font-size: 15px; padding-left: 0; }
+  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--soft); border-radius: 10px; padding: 3px; gap: 3px; }
+  .seg button { border: 0; background: transparent; color: var(--muted); font: 600 13px "Public Sans", sans-serif; padding: 9px 6px; border-radius: 8px; cursor: pointer; }
+  .seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+
+  .error { color: var(--danger); font-size: 13px; margin-top: 6px; min-height: 0; }
+
+  /* Result passbook */
+  .result { background: var(--ink); color: var(--paper); border-radius: 20px; padding: 18px 16px 16px; margin-bottom: 14px; border: 1px solid var(--line); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .result { background: #1D2B4A; color: #EDF1F8; } }
+  :root[data-theme="dark"] .result { background: #1D2B4A; color: #EDF1F8; }
+  .result .small { font-size: 13px; opacity: .75; }
+  .emi { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin: 2px 0 14px; word-break: break-word; }
+  .emi small { font-size: 14px; font-weight: 500; opacity: .7; letter-spacing: 0; }
+  .bar { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,.15); }
+  .bar span { display: block; height: 100%; }
+  .bar .p { background: #B9C7EE; }
+  .bar .i { background: var(--interest); }
+  .legend { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; font-size: 13px; }
+  .legend b { font-family: "Sora", sans-serif; font-weight: 600; display: block; font-size: 15px; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+  .stat .k { font-size: 12.5px; color: var(--muted); }
+  .stat .v { font-family: "Sora", sans-serif; font-weight: 600; font-size: 16px; margin-top: 3px; word-break: break-word; }
+  .note { font-size: 12.5px; color: var(--muted); margin: -4px 2px 16px; }
+
+  h2 { font-size: 16px; margin: 0 0 10px; }
+  .tabs { margin-bottom: 12px; }
+  .scroller { overflow-x: auto; max-height: 62vh; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 9px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--card); }
+  thead th { position: sticky; top: 0; background: var(--soft); color: var(--muted); font-weight: 600; z-index: 2; }
+  thead th:first-child { z-index: 3; background: var(--soft); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tfoot td { font-weight: 700; background: var(--soft); position: sticky; bottom: 0; }
+  tfoot td:first-child { background: var(--soft); }
+  .hint { color: var(--muted); font-size: 12.5px; margin: 8px 2px 0; }
+  .empty { text-align: center; color: var(--muted); padding: 28px 12px; }
+  .foot { text-align: center; color: var(--muted); font-size: 12px; margin-top: 18px; }
+  .actions { display: flex; gap: 10px; margin-bottom: 14px; }
+  .btn { flex: 1; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: 12px; padding: 12px; font: 600 14px "Public Sans", sans-serif; cursor: pointer; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main class="app">
+  <h1>Loan EMI Calculator</h1>
+  <p class="sub">Interest is charged only on the balance you still owe each month.</p>
+
+  <section class="card" aria-label="Loan details">
+    <div class="field">
+      <label for="amount">Loan amount</label>
+      <div class="input-wrap">
+        <span class="affix" id="cur-sym">₹</span>
+        <input id="amount" type="number" inputmode="decimal" min="0" value="500000" autocomplete="off">
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="rate">Interest rate (per year)</label>
+        <div class="input-wrap">
+          <input id="rate" type="number" inputmode="decimal" min="0" step="0.01" value="9" autocomplete="off">
+          <span class="affix">%</span>
+        </div>
+      </div>
+      <div class="field">
+        <label for="tenure">Tenure</label>
+        <div class="input-wrap">
+          <input id="tenure" type="number" inputmode="numeric" min="1" value="3" autocomplete="off">
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <div class="seg" role="group" aria-label="Tenure unit">
+        <button type="button" id="u-years" aria-pressed="true">Years</button>
+        <button type="button" id="u-months" aria-pressed="false">Months</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label for="currency">Currency</label>
+        <div class="input-wrap">
+          <select id="currency">
+            <option value="INR" selected>INR ₹</option>
+            <option value="USD">USD $</option>
+            <option value="EUR">EUR €</option>
+            <option value="GBP">GBP £</option>
+            <option value="AED">AED</option>
+            <option value="PKR">PKR</option>
+            <option value="BDT">BDT ৳</option>
+            <option value="LKR">LKR</option>
+          </select>
+        </div>
+      </div>
+      <div></div>
+    </div>
+    <div class="error" id="error" role="alert"></div>
+  </section>
+
+  <div id="output" hidden>
+    <section class="result" aria-live="polite">
+      <div class="small">Monthly EMI</div>
+      <div class="emi num" id="emi">–</div>
+      <div class="bar" aria-hidden="true"><span class="p" id="bar-p"></span><span class="i" id="bar-i"></span></div>
+      <div class="legend">
+        <div><span class="dot" style="background:#B9C7EE"></span>Principal<b id="lg-p">–</b></div>
+        <div style="text-align:right"><span class="dot" style="background:var(--interest)"></span>Interest<b id="lg-i">–</b></div>
+      </div>
+    </section>
+
+    <div class="stats">
+      <div class="stat"><div class="k">Total payable</div><div class="v" id="s-total">–</div></div>
+      <div class="stat"><div class="k">Total interest</div><div class="v" id="s-int">–</div></div>
+      <div class="stat"><div class="k">Interest in month 1</div><div class="v" id="s-mint">–</div></div>
+      <div class="stat"><div class="k">Interest in year 1</div><div class="v" id="s-yint">–</div></div>
+      <div class="stat"><div class="k">Principal in month 1</div><div class="v" id="s-mprin">–</div></div>
+      <div class="stat"><div class="k">Installments</div><div class="v" id="s-n">–</div></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="copy" type="button">Copy summary</button>
+      <button class="btn primary" id="print" type="button">Print / Save PDF</button>
+    </div>
+
+    <section class="card" aria-label="Repayment schedule">
+      <h2>Repayment details</h2>
+      <div class="seg tabs" role="tablist">
+        <button type="button" role="tab" id="t-month" aria-selected="true">Monthly</button>
+        <button type="button" role="tab" id="t-year" aria-selected="false">Yearly</button>
+      </div>
+      <div id="p-month" class="scroller" role="tabpanel" tabindex="0"></div>
+      <div id="p-year" class="scroller" role="tabpanel" tabindex="0" hidden></div>
+      <p class="hint">Swipe sideways to see every column. Each loan year covers 12 installments.</p>
+    </section>
+  </div>
+
+  <div class="empty" id="empty">Enter the loan amount, rate and tenure to see your EMI.</div>
+  <p class="foot">Estimates only. Your lender's final figures may differ.</p>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var unit = 'years';
+  var state = null;
+  var LOCALES = { INR: 'en-IN', USD: 'en-US', EUR: 'de-DE', GBP: 'en-GB', AED: 'en-AE', PKR: 'en-PK', BDT: 'en-BD', LKR: 'en-LK' };
+  var nf = null;
+
+  function setFormatter() {
+    var c = $('currency').value;
+    try {
+      nf = new Intl.NumberFormat(LOCALES[c] || 'en-US', { style: 'currency', currency: c, minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      var parts = nf.formatToParts(0).filter(function (p) { return p.type === 'currency'; });
+      $('cur-sym').textContent = parts.length ? parts[0].value : c;
+    } catch (e) {
+      nf = { format: function (n) { return c + ' ' + n.toFixed(2); } };
+      $('cur-sym').textContent = c;
+    }
+  }
+  function money(n) { return nf.format(n); }
+  function round2(n) { return Math.round(n * 100) / 100; }
+
+  function calc() {
+    var P = parseFloat($('amount').value);
+    var r = parseFloat($('rate').value);
+    var t = parseFloat($('tenure').value);
+    var err = $('error');
+    err.textContent = '';
+
+    if (isNaN(P) && isNaN(r) && isNaN(t)) { show(false); return; }
+    if (isNaN(P) || P <= 0) { err.textContent = 'Enter a loan amount greater than 0.'; show(false); return; }
+    if (isNaN(r) || r < 0 || r > 100) { err.textContent = 'Enter an interest rate between 0 and 100.'; show(false); return; }
+    if (isNaN(t) || t <= 0) { err.textContent = 'Enter a tenure greater than 0.'; show(false); return; }
+
+    var n = unit === 'years' ? Math.round(t * 12) : Math.round(t);
+    if (n < 1) { err.textContent = 'Tenure must be at least 1 month.'; show(false); return; }
+    if (n > 480) { err.textContent = 'Tenure can be at most 40 years (480 months).'; show(false); return; }
+
+    var cur = build(P, r, n);
+    var rows = cur.rows;
+    var yrs = [];
+    for (var j = 0; j < rows.length; j++) {
+      var yi = Math.floor(j / 12);
+      if (!yrs[yi]) yrs[yi] = { year: yi + 1, count: 0, prin: 0, int: 0, paid: 0, bal: 0 };
+      var y = yrs[yi]; y.count++; y.prin += rows[j].prin; y.int += rows[j].int; y.paid += rows[j].emi; y.bal = rows[j].bal;
+    }
+    state = { P: P, r: r, n: n, emi: cur.emi, total: cur.total, totalInterest: cur.totalInterest, firstInt: cur.firstInt, firstPrin: cur.firstPrin, yr1Int: cur.yr1Int, rows: rows, yrs: yrs };
+    render();
+    show(true);
+  }
+
+  function build(P, r, n) {
+    var rows = [], bal = P, i, tot = 0, ti = 0, yr1 = 0;
+    var mr = r / 1200;
+    var emi = mr === 0 ? P / n : P * mr * Math.pow(1 + mr, n) / (Math.pow(1 + mr, n) - 1);
+    for (i = 1; i <= n; i++) {
+      var it = bal * mr;
+      var pp = i === n ? bal : emi - it;
+      bal = i === n ? 0 : bal - pp;
+      rows.push({ no: i, emi: pp + it, prin: pp, int: it, bal: Math.max(bal, 0) });
+    }
+    rows.forEach(function (x) { tot += x.emi; ti += x.int; });
+    for (i = 0; i < Math.min(12, rows.length); i++) yr1 += rows[i].int;
+    return { rows: rows, emi: emi, total: tot, totalInterest: ti, firstInt: rows[0].int, firstPrin: rows[0].prin, yr1Int: yr1 };
+  }
+
+  function show(on) {
+    $('output').hidden = !on;
+    $('empty').hidden = on;
+  }
+
+  function render() {
+    var s = state;
+    $('emi').innerHTML = money(s.emi) + ' <small>/ month</small>';
+    var pPct = (s.P / s.total) * 100;
+    $('bar-p').style.width = pPct + '%';
+    $('bar-i').style.width = (100 - pPct) + '%';
+    $('lg-p').textContent = money(s.P);
+    $('lg-i').textContent = money(s.totalInterest);
+    $('s-total').textContent = money(s.total);
+    $('s-int').textContent = money(s.totalInterest);
+    $('s-mint').textContent = money(s.firstInt);
+    $('s-yint').textContent = money(s.yr1Int);
+    $('s-mprin').textContent = money(s.firstPrin);
+    $('s-n').textContent = s.n + (s.n === 1 ? ' month' : ' months');
+
+    var h = '<table><thead><tr><th>Month</th><th>EMI</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead><tbody>';
+    s.rows.forEach(function (r) {
+      h += '<tr><td>' + r.no + '</td><td>' + money(r.emi) + '</td><td>' + money(r.prin) + '</td><td>' + money(r.int) + '</td><td>' + money(r.bal) + '</td></tr>';
+    });
+    h += '</tbody><tfoot><tr><td>Total</td><td>' + money(s.total) + '</td><td>' + money(s.P) + '</td><td>' + money(s.totalInterest) + '</td><td></td></tr></tfoot></table>';
+    $('p-month').innerHTML = h;
+
+    var g = '<table style="min-width:520px"><thead><tr><th>Year</th><th>Total paid</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead><tbody>';
+    s.yrs.forEach(function (y) {
+      g += '<tr><td>Year ' + y.year + (y.count < 12 ? ' (' + y.count + ' mo)' : '') + '</td><td>' + money(y.paid) + '</td><td>' + money(y.prin) + '</td><td>' + money(y.int) + '</td><td>' + money(y.bal) + '</td></tr>';
+    });
+    g += '</tbody><tfoot><tr><td>Total</td><td>' + money(s.total) + '</td><td>' + money(s.P) + '</td><td>' + money(s.totalInterest) + '</td><td></td></tr></tfoot></table>';
+    $('p-year').innerHTML = g;
+  }
+
+  function setUnit(u) {
+    var t = parseFloat($('tenure').value);
+    if (u !== unit && !isNaN(t)) {
+      $('tenure').value = u === 'months' ? Math.round(t * 12) : round2(t / 12);
+    }
+    unit = u;
+    $('u-years').setAttribute('aria-pressed', u === 'years');
+    $('u-months').setAttribute('aria-pressed', u === 'months');
+    calc();
+  }
+
+  function setTab(which) {
+    var m = which === 'month';
+    $('t-month').setAttribute('aria-selected', m);
+    $('t-year').setAttribute('aria-selected', !m);
+    $('p-month').hidden = !m;
+    $('p-year').hidden = m;
+  }
+
+  function summary() {
+    var s = state;
+    return [
+      'Reducing Balance EMI Summary',
+      'Loan amount: ' + money(s.P),
+      'Interest rate: ' + s.r + '% per year',
+      'Tenure: ' + s.n + ' months',
+      'Monthly EMI: ' + money(s.emi),
+      'Total interest: ' + money(s.totalInterest),
+      'Total payable: ' + money(s.total)
+    ].join('\n');
+  }
+
+  $('copy').addEventListener('click', function () {
+    var btn = this, text = summary();
+    function done(ok) { btn.textContent = ok ? 'Copied' : 'Copy not available'; setTimeout(function () { btn.textContent = 'Copy summary'; }, 1800); }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { done(true); }, function () { fallback(); });
+      } else { fallback(); }
+    } catch (e) { fallback(); }
+    function fallback() {
+      try {
+        var ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand('copy'); document.body.removeChild(ta); done(ok);
+      } catch (e) { done(false); }
+    }
+  });
+  $('print').addEventListener('click', function () { try { window.print(); } catch (e) {} });
+
+  ['amount', 'rate', 'tenure'].forEach(function (id) { $(id).addEventListener('input', calc); });
+  $('currency').addEventListener('change', function () { setFormatter(); if (state) calc(); });
+  $('u-years').addEventListener('click', function () { setUnit('years'); });
+  $('u-months').addEventListener('click', function () { setUnit('months'); });
+  $('t-month').addEventListener('click', function () { setTab('month'); });
+  $('t-year').addEventListener('click', function () { setTab('year'); });
+
+  setFormatter();
+  calc();
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+}
+</script>
+</body>
+</html>
