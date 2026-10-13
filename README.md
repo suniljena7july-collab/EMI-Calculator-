@@ -1,8 +1,13 @@
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1a73e8">
-<link rel="apple-touch-icon" href="icon-192.png">
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
-</script>
+# EMI Calculator
+
+A free, offline EMI calculator that works as an installable app (PWA).
+
+**Live app:** https://suniljena7july-collab.github.io/EMI-Calculator-/
+
+## Features
+- Calculate monthly EMI, total interest and total payment
+- Works offline after the first load
+- Installable on Android and desktop
+
+## Usage
+Enter the loan amount, interest rate and tenure to see your EMI.
