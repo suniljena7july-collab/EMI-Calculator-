@@ -28,3 +28,11 @@ For iOS: Product > Archive and upload to App Store Connect ($99/year).
 - Change com.yourname.emicalc to your own ID.
 - Add a short privacy policy page (this app stores no data).
 - Prepare screenshots and a short description.
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1a73e8">
+<link rel="apple-touch-icon" href="icon-192.png">
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
