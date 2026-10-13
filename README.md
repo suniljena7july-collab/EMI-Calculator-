@@ -36,3 +36,8 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
 }
 </script>
+git pull
+sed -i 's|<head>|<head>\n<link rel="manifest" href="manifest.json">\n<meta name="theme-color" content="#1a73e8">\n<link rel="apple-touch-icon" href="icon-192.png">|' index.html
+sed -i 's|</body>|<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js");}</script>\n</body>|' index.html
+grep -c "manifest" index.html
+git add . && git commit -m "Add PWA" && git push
