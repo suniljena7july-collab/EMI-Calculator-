@@ -1,4 +1,4 @@
-const CACHE = 'emi-calc-v1';
+const CACHE = 'emi-calc-v2';
 const FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './maskable-512.png'];
 
 self.addEventListener('install', e => {
