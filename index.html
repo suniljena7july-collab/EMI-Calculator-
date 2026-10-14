@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="EMI Calc">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -90,13 +90,11 @@
   .input-wrap { display: flex; align-items: center; background: var(--paper); border: 1.5px solid var(--line); border-radius: 12px; padding: 0 12px; transition: border-color .15s; }
   .input-wrap:focus-within { border-color: var(--accent); }
   .input-wrap .affix { color: var(--muted); font-weight: 600; font-size: 15px; }
-  input[type=number], input[type=month], select {
+  input[type=number] {
     width: 100%; border: 0; background: transparent; color: var(--ink);
     font: 600 17px "Sora", system-ui, sans-serif;
     padding: 13px 8px; outline: none; min-width: 0; -moz-appearance: textfield;
   }
-  input[type=month] { font-size: 15px; }
-  select { font-size: 15px; padding-left: 0; }
   input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -142,6 +140,7 @@
   .empty { text-align: center; color: var(--muted); padding: 28px 12px; }
   .foot { text-align: center; color: var(--muted); font-size: 12px; margin-top: 18px; }
   .actions { display: flex; gap: 10px; margin-bottom: 14px; }
+  .card > .actions { margin: 14px 0 0; }
   .btn { flex: 1; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); border-radius: 12px; padding: 12px; font: 600 14px "Public Sans", sans-serif; cursor: pointer; }
   .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
   [hidden] { display: none !important; }
@@ -181,25 +180,10 @@
         <button type="button" id="u-months" aria-pressed="false">Months</button>
       </div>
     </div>
-    <div class="row">
-      <div class="field">
-        <label for="currency">Currency</label>
-        <div class="input-wrap">
-          <select id="currency">
-            <option value="INR" selected>INR ₹</option>
-            <option value="USD">USD $</option>
-            <option value="EUR">EUR €</option>
-            <option value="GBP">GBP £</option>
-            <option value="AED">AED</option>
-            <option value="PKR">PKR</option>
-            <option value="BDT">BDT ৳</option>
-            <option value="LKR">LKR</option>
-          </select>
-        </div>
-      </div>
-      <div></div>
-    </div>
     <div class="error" id="error" role="alert"></div>
+    <div class="actions">
+      <button class="btn" id="clear" type="button">Clear</button>
+    </div>
   </section>
 
   <div id="output" hidden>
@@ -248,20 +232,8 @@
   var $ = function (id) { return document.getElementById(id); };
   var unit = 'years';
   var state = null;
-  var LOCALES = { INR: 'en-IN', USD: 'en-US', EUR: 'de-DE', GBP: 'en-GB', AED: 'en-AE', PKR: 'en-PK', BDT: 'en-BD', LKR: 'en-LK' };
-  var nf = null;
+  var nf = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-  function setFormatter() {
-    var c = $('currency').value;
-    try {
-      nf = new Intl.NumberFormat(LOCALES[c] || 'en-US', { style: 'currency', currency: c, minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      var parts = nf.formatToParts(0).filter(function (p) { return p.type === 'currency'; });
-      $('cur-sym').textContent = parts.length ? parts[0].value : c;
-    } catch (e) {
-      nf = { format: function (n) { return c + ' ' + n.toFixed(2); } };
-      $('cur-sym').textContent = c;
-    }
-  }
   function money(n) { return nf.format(n); }
   function round2(n) { return Math.round(n * 100) / 100; }
 
@@ -363,6 +335,19 @@
     $('p-year').hidden = m;
   }
 
+  function clearAll() {
+    $('amount').value = '';
+    $('rate').value = '';
+    $('tenure').value = '';
+    unit = 'years';
+    $('u-years').setAttribute('aria-pressed', 'true');
+    $('u-months').setAttribute('aria-pressed', 'false');
+    setTab('month');
+    state = null;
+    calc();
+    $('amount').focus();
+  }
+
   function summary() {
     var s = state;
     return [
@@ -393,15 +378,14 @@
     }
   });
   $('print').addEventListener('click', function () { try { window.print(); } catch (e) {} });
+  $('clear').addEventListener('click', clearAll);
 
   ['amount', 'rate', 'tenure'].forEach(function (id) { $(id).addEventListener('input', calc); });
-  $('currency').addEventListener('change', function () { setFormatter(); if (state) calc(); });
   $('u-years').addEventListener('click', function () { setUnit('years'); });
   $('u-months').addEventListener('click', function () { setUnit('months'); });
   $('t-month').addEventListener('click', function () { setTab('month'); });
   $('t-year').addEventListener('click', function () { setTab('year'); });
 
-  setFormatter();
   calc();
 })();
 </script>
@@ -412,11 +396,3 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </script>
 </body>
 </html>
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#1a73e8">
-<link rel="apple-touch-icon" href="icon-192.png">
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
-</script>
